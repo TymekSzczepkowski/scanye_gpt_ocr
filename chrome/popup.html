@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Konfiguracja Scanye GPT OCR</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="popup-container">
+      <div class="popup-header">
+        <h1>🤖 Scanye GPT OCR</h1>
+        <p>Skonfiguruj swoje klucze API, aby włączyć porównanie OCR</p>
+      </div>
+
+      <form id="api-config-form" class="api-config-form">
+        <div class="form-group">
+          <label for="scanye-api-key">Klucz API Scanye</label>
+          <input type="password" id="scanye-api-key" name="scanyeApiKey" placeholder="Wprowadź swój klucz API Scanye" required />
+          <div class="validation-status" id="scanye-validation"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="openai-api-key">Klucz API OpenAI</label>
+          <input type="password" id="openai-api-key" name="openaiApiKey" placeholder="Wprowadź swój klucz API OpenAI" required />
+          <div class="validation-status" id="openai-validation"></div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" id="save-keys" class="btn btn-primary">Zapisz konfigurację</button>
+        </div>
+      </form>
+
+      <div class="status-message" id="status-message"></div>
+
+      <div class="usage-info">
+        <h3>Jak używać:</h3>
+        <ol>
+          <li>Skonfiguruj swoje klucze API powyżej</li>
+          <li>Przejdź do strony dokumentu Scanye</li>
+          <li>Kliknij ikonę rozszerzenia lub użyj przycisku "🤖 GPT OCR"</li>
+          <li>Porównaj wyniki OCR Scanye z wynikami GPT-4o Vision</li>
+          <li>Opcjonalnie zaktualizuj dane Scanye wynikami GPT</li>
+        </ol>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

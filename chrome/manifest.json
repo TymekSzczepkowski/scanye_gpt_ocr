@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Scanye GPT OCR - Rozszerzenie",
+  "version": "1.0.0",
+  "description": "Rozszerzenie Chrome do porównywania wyników OCR Scanye z GPT-4o Vision",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": ["https://app.scanye.pl/*", "https://api.scanye.pl/*", "https://api.openai.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://app.scanye.pl/validation/document/*", "https://app.scanye.pl/validation/invoice/*"],
+      "js": ["pdf.min.js", "content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["pdf.worker.min.js"],
+      "matches": ["https://app.scanye.pl/*"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Scanye GPT OCR - Porównanie OCR"
+  }
+}
