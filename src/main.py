@@ -39,13 +39,18 @@ def run_ocr_process():
     # --- DEBUG ---
 
     for i, doc in enumerate(pending_docs):
-        filename = pick_document_attribute(doc, ["originalFilename", "fileName", "filename"])
-        
-        # --- DEBUG ---
+        # --- Szukamy nazwy pliku w doc['data']['name'] ---
+        filename = None
+        if isinstance(doc.get('data'), dict):
+            # Używamy .get() dla bezpieczeństwa, na wypadek gdyby 'name' nie istniało
+            filename = doc['data'].get('name')
+        # --- KONIEC POPRAWKI ---
+
+        # --- DODANY DEBUGGING ---
         if filename:
             all_found_filenames.append(filename)
             print(f"  - Sprawdzam plik #{i+1}: '{filename}'")
-        # --- DEBUG ---
+        # --- KONIEC DEBUGGINGU ---
             
         if filename and FILE_TO_PROCESS.lower() in filename.lower():
             target_doc = doc
