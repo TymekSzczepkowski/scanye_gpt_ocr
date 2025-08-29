@@ -1,5 +1,20 @@
-/* Popup Styles for Scanye GPT OCR Extension */
+/**
+ * Popup Styles for Scanye GPT OCR Extension
+ * 
+ * Ten plik zawiera style CSS dla interfejsu popup rozszerzenia.
+ * Popup służy do konfiguracji kluczy API Scanye i OpenAI.
+ * 
+ * Główne sekcje:
+ * - Reset i podstawowe style
+ * - Kontener popup i nagłówek
+ * - Formularz konfiguracji
+ * - Przyciski i walidacja
+ * - Wiadomości statusu
+ * - Sekcja pomocy
+ * - Animacje i responsywność
+ */
 
+/* Reset i podstawowe style */
 * {
   margin: 0;
   padding: 0;
@@ -12,6 +27,7 @@ body {
   min-height: 100vh;
 }
 
+/* Główny kontener popup */
 .popup-container {
   width: 400px;
   min-height: 600px;
@@ -21,7 +37,7 @@ body {
   overflow: hidden;
 }
 
-/* Header */
+/* Nagłówek popup z gradientem */
 .popup-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -41,7 +57,7 @@ body {
   line-height: 1.4;
 }
 
-/* Form */
+/* Formularz konfiguracji */
 .api-config-form {
   padding: 24px;
 }
@@ -78,7 +94,7 @@ body {
   color: #6c757d;
 }
 
-/* Validation Status */
+/* Status walidacji pól */
 .validation-status {
   margin-top: 8px;
   font-size: 12px;
@@ -108,7 +124,7 @@ body {
   border: 1px solid #ffeaa7;
 }
 
-/* Buttons */
+/* Przyciski akcji */
 .form-actions {
   display: flex;
   gap: 12px;
@@ -154,7 +170,7 @@ body {
   box-shadow: none;
 }
 
-/* Status Message */
+/* Wiadomości statusu - sukces, błąd, info */
 .status-message {
   margin: 0 24px 24px;
   padding: 12px 16px;
@@ -185,9 +201,7 @@ body {
   border: 1px solid #bee5eb;
 }
 
-/* Help Section */
-
-/* Usage Info */
+/* Sekcja pomocy i instrukcji */
 .usage-info {
   padding: 0 24px 24px;
   background: #f8f9fa;
@@ -212,7 +226,7 @@ body {
   line-height: 1.4;
 }
 
-/* Loading Animation */
+/* Animacja ładowania */
 .loading {
   display: inline-block;
   width: 16px;
@@ -233,7 +247,7 @@ body {
   }
 }
 
-/* Responsive adjustments for popup */
+/* Dostosowania responsywne dla popup */
 @media (max-width: 450px) {
   .popup-container {
     width: 100vw;

@@ -7,32 +7,40 @@
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
+    <!-- Główny kontener popup -->
     <div class="popup-container">
+      <!-- Nagłówek z tytułem i opisem -->
       <div class="popup-header">
         <h1>🤖 Scanye GPT OCR</h1>
         <p>Skonfiguruj swoje klucze API, aby włączyć porównanie OCR</p>
       </div>
 
+      <!-- Formularz konfiguracji kluczy API -->
       <form id="api-config-form" class="api-config-form">
+        <!-- Pole klucza API Scanye -->
         <div class="form-group">
           <label for="scanye-api-key">Klucz API Scanye</label>
           <input type="password" id="scanye-api-key" name="scanyeApiKey" placeholder="Wprowadź swój klucz API Scanye" required />
           <div class="validation-status" id="scanye-validation"></div>
         </div>
 
+        <!-- Pole klucza API OpenAI -->
         <div class="form-group">
           <label for="openai-api-key">Klucz API OpenAI</label>
           <input type="password" id="openai-api-key" name="openaiApiKey" placeholder="Wprowadź swój klucz API OpenAI" required />
           <div class="validation-status" id="openai-validation"></div>
         </div>
 
+        <!-- Przyciski akcji -->
         <div class="form-actions">
           <button type="submit" id="save-keys" class="btn btn-primary">Zapisz konfigurację</button>
         </div>
       </form>
 
+      <!-- Wiadomość statusu - wyświetla błędy i sukcesy -->
       <div class="status-message" id="status-message"></div>
 
+      <!-- Sekcja z instrukcjami użycia -->
       <div class="usage-info">
         <h3>Jak używać:</h3>
         <ol>
@@ -45,6 +53,7 @@
       </div>
     </div>
 
+    <!-- Skrypt obsługujący logikę popup -->
     <script src="popup.js"></script>
   </body>
 </html>

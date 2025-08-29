@@ -1,5 +1,19 @@
-/* Scanye GPT OCR Extension Styles */
+/**
+ * Scanye GPT OCR Extension - Styles for Content Script
+ * 
+ * Ten plik zawiera style CSS dla interfejsu rozszerzenia wstrzykiwanego na strony Scanye.
+ * Definiuje wygląd panelu porównania, przycisków, tabel i innych elementów UI.
+ * 
+ * Główne komponenty:
+ * - Przycisk przełączania panelu
+ * - Główny panel z zakładkami
+ * - Tabela porównania wyników
+ * - Wyświetlanie surowych danych
+ * - Przyciski akcji
+ * - Responsywność i animacje
+ */
 
+/* Główny kontener rozszerzenia */
 #scanye-gpt-ocr-container {
   position: fixed;
   top: 20px;
@@ -8,7 +22,7 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
-/* Toggle Button */
+/* Przycisk przełączania panelu - domyślnie ukryty */
 #scanye-gpt-ocr-toggle {
   display: none;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -35,7 +49,7 @@
   font-size: 16px;
 }
 
-/* Main Panel */
+/* Główny panel rozszerzenia */
 .scanye-gpt-ocr-panel {
   position: fixed;
   top: 20px;
@@ -56,7 +70,7 @@
   transform: translateX(0);
 }
 
-/* Header */
+/* Nagłówek panelu z gradientem */
 .scanye-gpt-ocr-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -72,6 +86,7 @@
   font-weight: 600;
 }
 
+/* Przycisk zamykania panelu */
 .scanye-gpt-ocr-close {
   background: none;
   border: none;
@@ -92,14 +107,14 @@
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Content */
+/* Zawartość panelu z przewijaniem */
 .scanye-gpt-ocr-content {
   padding: 20px;
   max-height: calc(80vh - 80px);
   overflow-y: auto;
 }
 
-/* Status */
+/* Status operacji */
 .scanye-gpt-ocr-status {
   background: #f8f9fa;
   border: 1px solid #e9ecef;
@@ -111,7 +126,7 @@
   text-align: center;
 }
 
-/* Tabs */
+/* Zakładki nawigacyjne */
 .scanye-gpt-ocr-tabs {
   display: flex;
   border-bottom: 2px solid #e9ecef;
@@ -142,7 +157,7 @@
   background-color: #f8f9fa;
 }
 
-/* Tab Content */
+/* Zawartość zakładek */
 .scanye-gpt-ocr-tab-content {
   min-height: 300px;
 }
@@ -155,7 +170,7 @@
   display: block;
 }
 
-/* Comparison Table */
+/* Tabela porównania wyników OCR */
 .scanye-gpt-ocr-comparison-table {
   width: 100%;
   border-collapse: collapse;
@@ -181,6 +196,7 @@
   vertical-align: top;
 }
 
+/* Kolory wierszy - dopasowanie vs niezgodność */
 .scanye-gpt-ocr-comparison-table tr.match {
   background-color: #d4edda;
 }
@@ -193,7 +209,7 @@
   background-color: #f8f9fa;
 }
 
-/* Raw Data Display */
+/* Wyświetlanie surowych danych JSON */
 #scanye-data,
 #gpt-data {
   background: #f8f9fa;
@@ -210,7 +226,7 @@
   overflow-y: auto;
 }
 
-/* Buttons */
+/* Przyciski akcji */
 .scanye-gpt-ocr-actions {
   display: flex;
   gap: 12px;
@@ -244,6 +260,7 @@
   box-shadow: none;
 }
 
+/* Przyciski drugorzędne (reset, aktualizacja) */
 .scanye-gpt-ocr-button-secondary {
   background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
 }
@@ -252,7 +269,7 @@
   box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
 }
 
-/* Results Section */
+/* Sekcja wyników */
 .scanye-gpt-ocr-results {
   margin-top: 20px;
   border: 1px solid #e9ecef;
@@ -260,7 +277,7 @@
   overflow: hidden;
 }
 
-/* Responsive Design */
+/* Dostosowania responsywne */
 @media (max-width: 768px) {
   .scanye-gpt-ocr-panel {
     width: calc(100vw - 40px);
@@ -282,7 +299,7 @@
   }
 }
 
-/* Loading Animation */
+/* Animacja ładowania */
 .scanye-gpt-ocr-loading {
   display: inline-block;
   width: 20px;
@@ -303,7 +320,7 @@
   }
 }
 
-/* Scrollbar Styling */
+/* Stylowanie paska przewijania */
 .scanye-gpt-ocr-content::-webkit-scrollbar {
   width: 8px;
 }

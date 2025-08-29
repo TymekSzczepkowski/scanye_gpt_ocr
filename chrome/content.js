@@ -1,35 +1,75 @@
+/**
+ * Scanye GPT OCR Extension - Content Script
+ *
+ * Ten plik zawiera główną logikę rozszerzenia Chrome, które porównuje wyniki OCR
+ * z systemu Scanye z wynikami GPT-4o Vision. Rozszerzenie działa na stronach
+ * dokumentów Scanye i umożliwia użytkownikom porównanie oraz aktualizację danych.
+ *
+ * Główne funkcjonalności:
+ * - Iniekcja interfejsu użytkownika na stronę Scanye
+ * - Pobieranie danych OCR z API Scanye
+ * - Wysyłanie dokumentów do GPT-4o Vision
+ * - Porównywanie i wyświetlanie wyników
+ * - Aktualizacja danych w systemie Scanye
+ */
+
 class ScanyeGPTOCRExtension {
   constructor() {
+    // Flaga wskazująca czy trwa przetwarzanie (zapobiega wielokrotnym wywołaniom)
     this.isProcessing = false;
+
+    // ID dokumentu wyciągnięte z URL strony
     this.documentId = this.extractDocumentId();
+
+    // Inicjalizacja rozszerzenia
     this.init();
   }
 
+  /**
+   * Wyciąga ID dokumentu z URL strony
+   * Obsługuje formaty: /validation/document/{id} oraz /validation/invoice/{id}
+   * @returns {string|null} ID dokumentu lub null jeśli nie znaleziono
+   */
   extractDocumentId() {
     const url = window.location.href;
     const match = url.match(/\/(document|invoice)\/([a-f0-9-]+)/);
     return match ? match[2] : null;
   }
 
+  /**
+   * Główna funkcja inicjalizacyjna
+   * Sprawdza czy jesteśmy na stronie dokumentu i inicjalizuje interfejs
+   */
   async init() {
     if (!this.documentId) {
       console.log("Scanye GPT OCR: No document ID found in URL");
       return;
     }
 
+    // Wstrzykuje interfejs użytkownika do strony
     this.injectUI();
+
+    // Ustawia nasłuchiwanie zdarzeń
     this.setupEventListeners();
 
-    // Auto-detect if we're on a document page and show the button
+    // Automatycznie pokazuje przycisk porównania jeśli jesteśmy na stronie dokumentu
     if (this.isDocumentPage()) {
       this.showComparisonButton();
     }
   }
 
+  /**
+   * Sprawdza czy aktualna strona to strona dokumentu Scanye
+   * @returns {boolean} true jeśli jesteśmy na stronie dokumentu
+   */
   isDocumentPage() {
     return window.location.href.includes("/validation/document/") || window.location.href.includes("/validation/invoice/");
   }
 
+  /**
+   * Wstrzykuje interfejs użytkownika do strony
+   * Tworzy panel z przyciskami, zakładkami i tabelą porównania
+   */
   injectUI() {
     const container = document.createElement("div");
     container.id = "scanye-gpt-ocr-container";
@@ -82,40 +122,45 @@ class ScanyeGPTOCRExtension {
     document.body.appendChild(container);
   }
 
+  /**
+   * Ustawia wszystkie nasłuchiwania zdarzeń dla interfejsu użytkownika
+   * Obsługuje kliknięcia przycisków, przełączanie zakładek i komunikację z background script
+   */
   setupEventListeners() {
-    // Toggle panel
+    // Przełączanie panelu - pokazuje/ukrywa główny panel
     document.getElementById("scanye-gpt-ocr-toggle").addEventListener("click", () => {
       this.togglePanel();
     });
 
-    // Close panel
+    // Zamykanie panelu - ukrywa panel
     document.getElementById("scanye-gpt-ocr-close").addEventListener("click", () => {
       this.hidePanel();
     });
 
-    // Compare OCR results
+    // Porównanie wyników OCR - główna funkcjonalność
     document.getElementById("scanye-gpt-ocr-compare").addEventListener("click", () => {
       this.compareOCRResults();
     });
 
-    // Update Scanye data
+    // Aktualizacja danych Scanye - zapisuje wyniki GPT do systemu Scanye
     document.getElementById("scanye-gpt-ocr-update").addEventListener("click", () => {
       this.updateScanyeData();
     });
 
-    // Reset panel
+    // Reset panelu - czyści wszystkie wyniki i wraca do stanu początkowego
     document.getElementById("scanye-gpt-ocr-reset").addEventListener("click", () => {
       this.resetPanel();
     });
 
-    // Tab switching
+    // Przełączanie zakładek - zmienia widok między porównaniem, danymi Scanye i GPT
     document.querySelectorAll(".scanye-gpt-ocr-tab").forEach((tab) => {
       tab.addEventListener("click", (e) => {
         this.switchTab(e.target.dataset.tab);
       });
     });
 
-    // Listen for messages from background script
+    // Nasłuchiwanie wiadomości z background script
+    // Umożliwia komunikację między różnymi częściami rozszerzenia
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.type === "TOGGLE_PANEL") {
         this.togglePanel();
@@ -127,6 +172,10 @@ class ScanyeGPTOCRExtension {
     });
   }
 
+  /**
+   * Pokazuje przycisk porównania na stronie
+   * Przycisk jest domyślnie ukryty i pokazuje się tylko na stronach dokumentów
+   */
   showComparisonButton() {
     const toggle = document.getElementById("scanye-gpt-ocr-toggle");
     if (toggle) {
@@ -134,30 +183,46 @@ class ScanyeGPTOCRExtension {
     }
   }
 
+  /**
+   * Przełącza widoczność głównego panelu
+   * Dodaje/usuwa klasę 'active' która kontroluje wyświetlanie
+   */
   togglePanel() {
     const panel = document.getElementById("scanye-gpt-ocr-panel");
     panel.classList.toggle("active");
   }
 
+  /**
+   * Ukrywa główny panel
+   * Usuwa klasę 'active' z panelu
+   */
   hidePanel() {
     const panel = document.getElementById("scanye-gpt-ocr-panel");
     panel.classList.remove("active");
   }
 
+  /**
+   * Przełącza między zakładkami w panelu
+   * @param {string} tabName - nazwa zakładki do aktywacji
+   */
   switchTab(tabName) {
-    // Update tab buttons
+    // Aktualizuje przyciski zakładek - usuwa klasę 'active' ze wszystkich i dodaje do wybranej
     document.querySelectorAll(".scanye-gpt-ocr-tab").forEach((tab) => {
       tab.classList.remove("active");
     });
     document.querySelector(`[data-tab="${tabName}"]`).classList.add("active");
 
-    // Update tab content
+    // Aktualizuje zawartość zakładek - ukrywa wszystkie panele i pokazuje wybrany
     document.querySelectorAll(".scanye-gpt-ocr-tab-pane").forEach((pane) => {
       pane.classList.remove("active");
     });
     document.getElementById(`${tabName}-content`).classList.add("active");
   }
 
+  /**
+   * Główna funkcja porównująca wyniki OCR
+   * Pobiera dane z Scanye, wysyła dokument do GPT-4o Vision i porównuje wyniki
+   */
   async compareOCRResults() {
     if (this.isProcessing) return;
 
@@ -167,7 +232,7 @@ class ScanyeGPTOCRExtension {
     try {
       console.log("Starting OCR comparison for document:", this.documentId);
 
-      // Check API keys first
+      // Sprawdza klucze API przed rozpoczęciem przetwarzania
       const scanyeKey = await this.getScanyeApiKey();
       const openaiKey = await this.getOpenAIKey();
 
@@ -181,23 +246,23 @@ class ScanyeGPTOCRExtension {
 
       console.log("API keys found, fetching Scanye data...");
 
-      // Get Scanye data
+      // Pobiera dane OCR z systemu Scanye
       const scanyeData = await this.getScanyeData();
       console.log("Scanye data received:", scanyeData);
 
       console.log("Fetching document file...");
 
-      // Get document file
+      // Pobiera plik dokumentu (PDF) z systemu Scanye
       const documentFile = await this.getDocumentFile();
       console.log("Document file received, size:", documentFile.size);
 
       console.log("Sending to GPT-4o Vision...");
 
-      // Send to GPT-4o Vision
+      // Wysyła dokument do GPT-4o Vision do analizy
       const gptData = await this.sendToGPT4o(documentFile);
       console.log("GPT-4o data received:", gptData);
 
-      // Compare results
+      // Wyświetla porównanie wyników
       this.displayComparison(scanyeData, gptData);
 
       this.updateStatus("Porównanie zakończone pomyślnie!");
@@ -210,19 +275,23 @@ class ScanyeGPTOCRExtension {
     }
   }
 
+  /**
+   * Pobiera dane OCR z API Scanye dla aktualnego dokumentu
+   * @returns {Object} Dane OCR z systemu Scanye
+   */
   async getScanyeData() {
     const apiKey = await this.getScanyeApiKey();
     if (!apiKey) {
       throw new Error("Scanye API key not configured. Please configure it in the extension popup.");
     }
 
-    // Use the correct Scanye authorization format from documentation
+    // Ustawia nagłówki zgodnie z dokumentacją Scanye
     const headers = {
       Accept: "application/json",
       "Content-Type": "application/json",
     };
 
-    // Use the correct Scanye authorization format: "Scanye API-KEY"
+    // Format autoryzacji Scanye: "Scanye API-KEY"
     if (apiKey.startsWith("Scanye ")) {
       headers.Authorization = apiKey;
     } else {
@@ -231,6 +300,7 @@ class ScanyeGPTOCRExtension {
 
     console.log("Making request to Scanye API with headers:", headers);
 
+    // Wykonuje zapytanie do API Scanye o dane dokumentu
     const response = await fetch(`https://api.scanye.pl/invoices/${this.documentId}/data`, {
       method: "GET",
       headers: headers,
@@ -243,6 +313,7 @@ class ScanyeGPTOCRExtension {
       const errorText = await response.text();
       console.error("Scanye API Error Response:", errorText);
 
+      // Obsługa różnych kodów błędów
       if (response.status === 401) {
         throw new Error("Invalid Scanye API key. Please check your API key in the extension popup.");
       } else if (response.status === 404) {
@@ -261,13 +332,18 @@ class ScanyeGPTOCRExtension {
     }
   }
 
+  /**
+   * Pobiera plik dokumentu (PDF) z systemu Scanye
+   * Proces składa się z 3 kroków: żądanie wygenerowania PDF, sprawdzanie statusu, pobranie pliku
+   * @returns {Blob} Plik dokumentu jako Blob
+   */
   async getDocumentFile() {
     const apiKey = await this.getScanyeApiKey();
     if (!apiKey) {
       throw new Error("Scanye API key not configured. Please configure it in the extension popup.");
     }
 
-    // Use the correct Scanye authorization format: "Scanye API-KEY"
+    // Ustawia nagłówki autoryzacji
     const headers = {
       "Content-Type": "application/json",
     };
@@ -280,7 +356,7 @@ class ScanyeGPTOCRExtension {
 
     console.log("Step 1: Requesting PDF printout for invoice:", this.documentId);
 
-    // Step 1: Request PDF printout
+    // Krok 1: Żądanie wygenerowania PDF
     const printoutResponse = await fetch(`https://api.scanye.pl/printouts`, {
       method: "POST",
       headers: headers,
@@ -295,16 +371,16 @@ class ScanyeGPTOCRExtension {
       throw new Error(`Failed to request PDF printout: ${printoutResponse.statusText}`);
     }
 
-    // API returns the printout ID directly as a string (with quotes)
+    // API zwraca ID printout bezpośrednio jako string (w cudzysłowach)
     const printoutIdRaw = await printoutResponse.text();
-    const printoutId = printoutIdRaw.replace(/"/g, ""); // Remove quotes
+    const printoutId = printoutIdRaw.replace(/"/g, ""); // Usuwa cudzysłowy
     console.log("Printout ID received:", printoutId);
 
-    // Step 2: Poll for printout status
+    // Krok 2: Sprawdzanie statusu wygenerowania PDF
     console.log("Step 2: Checking printout status...");
     let attempts = 0;
-    const maxAttempts = 30; // 30 seconds timeout
-    const pollInterval = 1000; // 1 second
+    const maxAttempts = 30; // 30 sekund timeout
+    const pollInterval = 1000; // 1 sekunda
 
     while (attempts < maxAttempts) {
       attempts++;
@@ -327,7 +403,7 @@ class ScanyeGPTOCRExtension {
       if (statusData.status === "Finished") {
         console.log("Printout finished! File type:", statusData.fileType);
 
-        // Step 3: Download the file
+        // Krok 3: Pobranie pliku
         console.log("Step 3: Downloading file...");
         const fileResponse = await fetch(`https://api.scanye.pl/printouts/${printoutId}/data`, {
           method: "GET",
@@ -349,20 +425,26 @@ class ScanyeGPTOCRExtension {
         throw new Error("PDF generation failed");
       }
 
-      // Wait before next poll
+      // Czeka przed następnym sprawdzeniem
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
     }
 
     throw new Error("PDF generation timeout - took too long to complete");
   }
 
+  /**
+   * Wysyła dokument do GPT-4o Vision do analizy OCR
+   * Konwertuje PDF do obrazu jeśli potrzeba i wysyła do OpenAI API
+   * @param {Blob} file - Plik dokumentu do analizy
+   * @returns {Object} Dane wyekstrahowane przez GPT-4o Vision
+   */
   async sendToGPT4o(file) {
     const apiKey = await this.getOpenAIKey();
     if (!apiKey) {
       throw new Error("OpenAI API key not configured. Please configure it in the extension popup.");
     }
 
-    // Convert PDF to image if needed
+    // Konwertuje PDF do obrazu jeśli potrzeba
     let imageFile = file;
     if (file.type === "application/pdf") {
       console.log("Converting PDF to image...");
@@ -370,11 +452,13 @@ class ScanyeGPTOCRExtension {
       console.log("PDF converted to image, new type:", imageFile.type);
     }
 
-    // Convert file to base64
+    // Konwertuje plik do base64
     console.log("Converting to base64, file type:", imageFile.type);
     const base64 = await this.fileToBase64(imageFile);
 
     console.log("Sending to GPT-4o with image type:", imageFile.type);
+
+    // Wysyła zapytanie do OpenAI API
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -422,6 +506,7 @@ class ScanyeGPTOCRExtension {
       const errorText = await response.text();
       console.error("OpenAI API Error Response:", errorText);
 
+      // Obsługa różnych kodów błędów OpenAI
       if (response.status === 401) {
         throw new Error("Nieprawidłowy klucz API OpenAI. Sprawdź swój klucz API w popup rozszerzenia.");
       } else if (response.status === 429) {
@@ -436,10 +521,10 @@ class ScanyeGPTOCRExtension {
       const content = result.choices[0].message.content;
       console.log("GPT-4o raw response:", content);
 
-      // Try to extract JSON from markdown code blocks
+      // Próbuje wyekstrahować JSON z bloków kodu markdown
       let jsonContent = content;
 
-      // Remove markdown code blocks if present
+      // Usuwa bloki kodu markdown jeśli są obecne
       if (content.includes("```json")) {
         const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
         if (jsonMatch) {
@@ -447,7 +532,7 @@ class ScanyeGPTOCRExtension {
           console.log("Extracted JSON from markdown:", jsonContent);
         }
       } else if (content.includes("```")) {
-        // Handle generic code blocks
+        // Obsługuje ogólne bloki kodu
         const codeMatch = content.match(/```\s*([\s\S]*?)\s*```/);
         if (codeMatch) {
           jsonContent = codeMatch[1].trim();
@@ -468,6 +553,11 @@ class ScanyeGPTOCRExtension {
     }
   }
 
+  /**
+   * Konwertuje plik do formatu base64
+   * @param {Blob} file - Plik do konwersji
+   * @returns {Promise<string>} Plik w formacie base64
+   */
   fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -480,25 +570,30 @@ class ScanyeGPTOCRExtension {
     });
   }
 
+  /**
+   * Konwertuje plik PDF do obrazu używając PDF.js
+   * @param {Blob} pdfFile - Plik PDF do konwersji
+   * @returns {Promise<Blob>} Obraz jako Blob
+   */
   async convertPdfToImage(pdfFile) {
     return new Promise((resolve, reject) => {
-      // Set up PDF.js worker
+      // Ustawia worker PDF.js
       if (typeof pdfjsLib !== "undefined") {
         const workerUrl = chrome.runtime.getURL("pdf.worker.min.js");
         pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
       }
 
-      // Create a canvas to render PDF
+      // Tworzy canvas do renderowania PDF
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
 
-      // Create a URL for the PDF file
+      // Tworzy URL dla pliku PDF
       const pdfUrl = URL.createObjectURL(pdfFile);
 
-      // Use PDF.js to render PDF (if available) or fallback to simple conversion
+      // Używa PDF.js do renderowania PDF (jeśli dostępne) lub fallback
       if (typeof pdfjsLib !== "undefined") {
         console.log("Using PDF.js to convert PDF to image");
-        // PDF.js is available
+        // PDF.js jest dostępne
         pdfjsLib
           .getDocument(pdfUrl)
           .promise.then((pdf) => {
@@ -526,10 +621,10 @@ class ScanyeGPTOCRExtension {
             reject(error);
           });
       } else {
-        // Fallback: create a simple image representation
+        // Fallback: tworzy prostą reprezentację obrazu
         console.log("PDF.js not available, using fallback method");
 
-        // Create an image element
+        // Tworzy element obrazu
         const img = new Image();
         img.onload = () => {
           ctx.fillStyle = "white";
@@ -547,23 +642,35 @@ class ScanyeGPTOCRExtension {
     });
   }
 
+  /**
+   * Wyświetla porównanie wyników OCR
+   * @param {Object} scanyeData - Dane z systemu Scanye
+   * @param {Object} gptData - Dane z GPT-4o Vision
+   */
   displayComparison(scanyeData, gptData) {
-    // Display raw data
+    // Wyświetla surowe dane
     document.getElementById("scanye-data").textContent = JSON.stringify(scanyeData, null, 2);
     document.getElementById("gpt-data").textContent = JSON.stringify(gptData, null, 2);
 
-    // Create comparison table
+    // Tworzy tabelę porównania
     const comparisonTable = this.createComparisonTable(scanyeData, gptData);
     document.getElementById("comparison-table").innerHTML = comparisonTable;
 
-    // Show results
+    // Pokazuje wyniki
     document.getElementById("scanye-gpt-ocr-results").style.display = "block";
   }
 
+  /**
+   * Tworzy tabelę porównania wyników OCR
+   * @param {Object} scanyeData - Dane z systemu Scanye
+   * @param {Object} gptData - Dane z GPT-4o Vision
+   * @returns {string} HTML tabeli porównania
+   */
   createComparisonTable(scanyeData, gptData) {
-    // Normalize Scanye data to match GPT-4o format
+    // Normalizuje dane Scanye do formatu GPT-4o
     const normalizedScanye = this.normalizeScanyeData(scanyeData);
 
+    // Lista pól do porównania
     const fields = [
       "invoice_number",
       "vendor_name",
@@ -591,6 +698,7 @@ class ScanyeGPTOCRExtension {
                 <tbody>
         `;
 
+    // Tworzy wiersze tabeli dla każdego pola
     fields.forEach((field) => {
       const scanyeValue = normalizedScanye[field] || "N/A";
       const gptValue = gptData[field] || "N/A";
@@ -610,16 +718,21 @@ class ScanyeGPTOCRExtension {
     return table;
   }
 
+  /**
+   * Normalizuje dane Scanye do formatu porównywalnego z GPT-4o
+   * @param {Object} scanyeData - Surowe dane z API Scanye
+   * @returns {Object} Znormalizowane dane
+   */
   normalizeScanyeData(scanyeData) {
     const normalized = {};
 
-    // Invoice number
+    // Numer faktury
     normalized.invoice_number = scanyeData.invoiceNo?.value || "N/A";
 
-    // Vendor name
+    // Nazwa sprzedawcy
     normalized.vendor_name = scanyeData.payee?.name?.value || "N/A";
 
-    // Vendor address
+    // Adres sprzedawcy
     const payee = scanyeData.payee;
     if (payee) {
       const addressParts = [payee.streetName?.value, payee.buildingNo?.value, payee.postalCode?.value, payee.city?.value].filter(Boolean);
@@ -628,10 +741,10 @@ class ScanyeGPTOCRExtension {
       normalized.vendor_address = "N/A";
     }
 
-    // Client name
+    // Nazwa klienta
     normalized.client_name = scanyeData.payer?.name?.value || "N/A";
 
-    // Client address
+    // Adres klienta
     const payer = scanyeData.payer;
     if (payer) {
       const addressParts = [payer.streetName?.value, payer.buildingNo?.value, payer.postalCode?.value, payer.city?.value].filter(Boolean);
@@ -640,36 +753,42 @@ class ScanyeGPTOCRExtension {
       normalized.client_address = "N/A";
     }
 
-    // Invoice date
+    // Data faktury
     normalized.invoice_date = scanyeData.dates?.issue?.value || "N/A";
 
-    // Due date
+    // Termin płatności
     normalized.due_date = scanyeData.dates?.due?.value || "N/A";
 
-    // Total amount
+    // Kwota całkowita
     normalized.total_amount = scanyeData.amounts?.gross?.value || "N/A";
 
-    // Currency
+    // Waluta
     normalized.currency = scanyeData.currency?.value || "N/A";
 
-    // Tax amount
+    // Kwota podatku
     normalized.tax_amount = scanyeData.amounts?.vat?.value || "N/A";
 
-    // Net amount
+    // Kwota netto
     normalized.net_amount = scanyeData.amounts?.net?.value || "N/A";
 
     return normalized;
   }
 
+  /**
+   * Porównuje dwie wartości z uwzględnieniem normalizacji
+   * @param {string} val1 - Pierwsza wartość
+   * @param {string} val2 - Druga wartość
+   * @returns {boolean} true jeśli wartości są równe po normalizacji
+   */
   compareValues(val1, val2) {
     if (val1 === val2) return true;
     if (val1 === "N/A" || val2 === "N/A") return false;
 
-    // Normalize values for comparison
+    // Normalizuje wartości do porównania
     const normalize = (val) => {
       let normalized = val.toString().toLowerCase().trim().replace(/\s+/g, " ");
 
-      // Normalize dates (DD.MM.YYYY vs YYYY-MM-DD)
+      // Normalizuje daty (DD.MM.YYYY vs YYYY-MM-DD)
       const datePattern1 = /(\d{2})\.(\d{2})\.(\d{4})/;
       const datePattern2 = /(\d{4})-(\d{2})-(\d{2})/;
 
@@ -679,7 +798,7 @@ class ScanyeGPTOCRExtension {
         normalized = normalized.replace(datePattern2, "$3.$2.$1");
       }
 
-      // Normalize amounts (remove currency symbols, normalize decimals)
+      // Normalizuje kwoty (usuwa symbole walut, normalizuje przecinki)
       normalized = normalized.replace(/[^\d.,]/g, "");
       normalized = normalized.replace(",", ".");
 
@@ -689,6 +808,11 @@ class ScanyeGPTOCRExtension {
     return normalize(val1) === normalize(val2);
   }
 
+  /**
+   * Formatuje nazwy pól do wyświetlenia w tabeli
+   * @param {string} field - Nazwa pola w formacie snake_case
+   * @returns {string} Sformatowana nazwa pola
+   */
   formatFieldName(field) {
     const fieldNames = {
       invoice_number: "Numer faktury",
@@ -713,6 +837,11 @@ class ScanyeGPTOCRExtension {
     );
   }
 
+  /**
+   * Formatuje wartość do wyświetlenia w tabeli
+   * @param {string} value - Wartość do sformatowania
+   * @returns {string} Sformatowana wartość
+   */
   formatValue(value) {
     if (value === null || value === undefined || value === "N/A") {
       return "<em>Nie znaleziono</em>";
@@ -720,6 +849,10 @@ class ScanyeGPTOCRExtension {
     return value.toString();
   }
 
+  /**
+   * Aktualizuje dane w systemie Scanye wynikami z GPT-4o Vision
+   * Wysyła dane GPT do API Scanye aby zaktualizować dokument
+   */
   async updateScanyeData() {
     if (this.isProcessing) return;
 
@@ -727,6 +860,7 @@ class ScanyeGPTOCRExtension {
     this.updateStatus("Aktualizowanie danych Scanye...");
 
     try {
+      // Pobiera dane GPT z wyświetlonego wyniku
       const gptData = JSON.parse(document.getElementById("gpt-data").textContent);
 
       const apiKey = await this.getScanyeApiKey();
@@ -734,13 +868,14 @@ class ScanyeGPTOCRExtension {
         "Content-Type": "application/json",
       };
 
-      // Use the correct Scanye authorization format: "Scanye API-KEY"
+      // Ustawia autoryzację Scanye
       if (apiKey.startsWith("Scanye ")) {
         headers.Authorization = apiKey;
       } else {
         headers.Authorization = `Scanye ${apiKey}`;
       }
 
+      // Wysyła żądanie aktualizacji do API Scanye
       const response = await fetch(`https://api.scanye.pl/invoices/${this.documentId}`, {
         method: "PATCH",
         headers: headers,
@@ -760,34 +895,46 @@ class ScanyeGPTOCRExtension {
     }
   }
 
+  /**
+   * Aktualizuje status w interfejsie użytkownika
+   * @param {string} message - Wiadomość do wyświetlenia
+   */
   updateStatus(message) {
     document.getElementById("scanye-gpt-ocr-status").textContent = message;
   }
 
+  /**
+   * Resetuje panel do stanu początkowego
+   * Czyści wszystkie wyniki i ukrywa przyciski aktualizacji
+   */
   resetPanel() {
-    // Reset status
+    // Resetuje status
     this.updateStatus("Gotowy do porównania wyników OCR");
 
-    // Hide results
+    // Ukrywa wyniki
     document.getElementById("scanye-gpt-ocr-results").style.display = "none";
 
-    // Hide update button
+    // Ukrywa przycisk aktualizacji
     document.getElementById("scanye-gpt-ocr-update").style.display = "none";
 
-    // Reset processing state
+    // Resetuje stan przetwarzania
     this.isProcessing = false;
 
-    // Clear any previous data
+    // Czyści poprzednie dane
     document.getElementById("scanye-data").textContent = "";
     document.getElementById("gpt-data").textContent = "";
     document.getElementById("comparison-table").innerHTML = "";
 
-    // Switch back to comparison tab
+    // Przełącza z powrotem na zakładkę porównania
     this.switchTab("comparison");
 
     console.log("Panel został zresetowany");
   }
 
+  /**
+   * Pobiera klucz API Scanye z chrome.storage
+   * @returns {Promise<string>} Klucz API Scanye
+   */
   async getScanyeApiKey() {
     return new Promise((resolve) => {
       chrome.storage.sync.get(["scanyeApiKey"], (result) => {
@@ -796,6 +943,10 @@ class ScanyeGPTOCRExtension {
     });
   }
 
+  /**
+   * Pobiera klucz API OpenAI z chrome.storage
+   * @returns {Promise<string>} Klucz API OpenAI
+   */
   async getOpenAIKey() {
     return new Promise((resolve) => {
       chrome.storage.sync.get(["openaiApiKey"], (result) => {
@@ -805,7 +956,7 @@ class ScanyeGPTOCRExtension {
   }
 }
 
-// Initialize extension when page loads
+// Inicjalizuje rozszerzenie gdy strona się załaduje
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
     new ScanyeGPTOCRExtension();

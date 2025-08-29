@@ -1,15 +1,30 @@
-// Handle extension installation
+/**
+ * Scanye GPT OCR Extension - Background Script
+ *
+ * Ten plik zawiera logikę background script rozszerzenia Chrome, która działa
+ * w tle i obsługuje komunikację między różnymi częściami rozszerzenia.
+ *
+ * Główne funkcjonalności:
+ * - Obsługa instalacji rozszerzenia
+ * - Komunikacja między content script a popup
+ * - Zarządzanie kluczami API w chrome.storage
+ * - Obsługa kliknięć ikony rozszerzenia
+ * - Wykrywanie stron Scanye
+ */
+
+// Obsługa instalacji rozszerzenia
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
-    // Open options page on first install
+    // Otwiera stronę konfiguracji przy pierwszej instalacji
     chrome.tabs.create({
       url: chrome.runtime.getURL("popup.html"),
     });
   }
 });
 
-// Handle messages from content script
+// Obsługa wiadomości z content script i popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Pobieranie kluczy API z chrome.storage
   if (request.type === "GET_API_KEYS") {
     chrome.storage.sync.get(["scanyeApiKey", "openaiApiKey"], (result) => {
       sendResponse({
@@ -17,9 +32,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         openaiApiKey: result.openaiApiKey || "",
       });
     });
-    return true; // Keep message channel open for async response
+    return true; // Zachowuje kanał wiadomości otwarty dla asynchronicznej odpowiedzi
   }
 
+  // Zapisywanie kluczy API do chrome.storage
   if (request.type === "SAVE_API_KEYS") {
     chrome.storage.sync.set(
       {
@@ -34,29 +50,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Handle extension icon click
+// Obsługa kliknięcia ikony rozszerzenia
 chrome.action.onClicked.addListener((tab) => {
-  // Check if we're on a Scanye page
+  // Sprawdza czy jesteśmy na stronie Scanye
   if (tab.url && (tab.url.includes("app.scanye.pl/validation/document/") || tab.url.includes("app.scanye.pl/validation/invoice/"))) {
-    // Send message to content script to toggle panel
+    // Wysyła wiadomość do content script aby przełączyć panel
     chrome.tabs.sendMessage(tab.id, { type: "TOGGLE_PANEL" });
   } else {
-    // Open popup for configuration - in Manifest V3, popup opens automatically when defined
+    // Otwiera popup dla konfiguracji - w Manifest V3 popup otwiera się automatycznie gdy jest zdefiniowany
     console.log("Extension clicked on non-Scanye page");
   }
 });
 
-// Handle tab updates to show/hide extension icon
+// Obsługa aktualizacji zakładek aby pokazać/ukryć ikonę rozszerzenia
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === "complete" && tab.url) {
     const isScanyePage = tab.url.includes("app.scanye.pl/validation/document/") || tab.url.includes("app.scanye.pl/validation/invoice/");
 
     if (isScanyePage) {
-      // Extension is active on Scanye pages
+      // Rozszerzenie jest aktywne na stronach Scanye
       console.log("Scanye page detected:", tab.url);
     }
   }
 });
 
-// Extension is ready
+// Rozszerzenie jest gotowe
 console.log("Scanye GPT OCR Extension background script loaded");
