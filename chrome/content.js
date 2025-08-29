@@ -877,7 +877,7 @@ class ScanyeGPTOCRExtension {
 
       // Wysyła żądanie aktualizacji do API Scanye
       const response = await fetch(`https://api.scanye.pl/invoices/${this.documentId}`, {
-        method: "PATCH",
+        method: "PUT",
         headers: headers,
         body: JSON.stringify(gptData),
       });
